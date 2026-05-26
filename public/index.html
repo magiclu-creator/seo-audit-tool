@@ -1,0 +1,244 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Audit Tool - Free Website Analyzer</title>
+  <meta name="description" content="Free SEO audit tool. Analyze any website for SEO issues and get actionable recommendations.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0a0a1a; --bg-card: #111127; --bg-alt: #16162e;
+      --border: #2a2a4a; --text: #e8e8f0; --text-muted: #8888aa;
+      --pass: #22c55e; --warn: #eab308; --fail: #ef4444; --info: #3b82f6;
+      --brand: #6366f1; --brand-light: #818cf8; --accent: #a78bfa;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); }
+    .logo { font-size: 1.3rem; font-weight: 800; }
+    .logo span { background: linear-gradient(135deg, var(--brand-light), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    
+    .container { max-width: 900px; margin: 0 auto; padding: 3rem 2rem; }
+    
+    .hero { text-align: center; margin-bottom: 3rem; }
+    .hero h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.75rem; }
+    .hero h1 .grad { background: linear-gradient(135deg, var(--brand-light), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { color: var(--text-muted); font-size: 1.1rem; }
+    
+    .search-box { display: flex; gap: 0.75rem; background: var(--bg-card); padding: 0.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; }
+    .search-box input { flex: 1; padding: 0.75rem 1rem; background: var(--bg-alt); border: none; border-radius: 8px; color: var(--text); font-size: 1rem; outline: none; }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; background: var(--brand); color: white; }
+    .btn:hover { background: #4f46e5; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    /* Loading */
+    .loading { display: none; text-align: center; padding: 3rem; }
+    .loading.show { display: block; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Results */
+    .results { display: none; }
+    .results.show { display: block; }
+    
+    .score-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; text-align: center; margin-bottom: 2rem; }
+    .score-ring { width: 150px; height: 150px; margin: 0 auto 1rem; position: relative; }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring circle { fill: none; stroke-width: 8; }
+    .score-ring .bg { stroke: var(--border); }
+    .score-ring .fg { stroke: var(--pass); stroke-linecap: round; transition: stroke-dasharray 1s ease; }
+    .score-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; font-weight: 800; }
+    .score-grade { font-size: 1.1rem; color: var(--text-muted); }
+    
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .summary-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
+    .summary-item .num { font-size: 1.8rem; font-weight: 800; }
+    .summary-item .lbl { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+    
+    /* Check categories */
+    .category { margin-bottom: 1.5rem; }
+    .category-header { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px 10px 0 0; cursor: pointer; }
+    .category-header:hover { border-color: var(--brand); }
+    .category-header h3 { font-size: 0.95rem; font-weight: 600; flex: 1; }
+    .category-header .badge { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 50px; font-weight: 600; }
+    .badge-pass { background: rgba(34,197,94,0.15); color: var(--pass); }
+    .badge-warn { background: rgba(234,179,8,0.15); color: var(--warn); }
+    .badge-fail { background: rgba(239,68,68,0.15); color: var(--fail); }
+    
+    .category-body { border: 1px solid var(--border); border-top: none; border-radius: 0 0 10px 10px; overflow: hidden; }
+    .check-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .check-item:last-child { border-bottom: none; }
+    .check-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; margin-top: 2px; }
+    .check-icon.pass { background: rgba(34,197,94,0.15); color: var(--pass); }
+    .check-icon.warn { background: rgba(234,179,8,0.15); color: var(--warn); }
+    .check-icon.fail { background: rgba(239,68,68,0.15); color: var(--fail); }
+    .check-icon.info { background: rgba(59,130,246,0.15); color: var(--info); }
+    .check-name { font-weight: 600; min-width: 120px; }
+    .check-msg { color: var(--text-muted); flex: 1; }
+    
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 1.8rem; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .search-box { flex-direction: column; }
+      .check-item { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">🔍 <span>SEO Audit</span></div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Free <span class="grad">SEO Audit</span> Tool</h1>
+      <p>Enter any URL and get a comprehensive SEO analysis in seconds.</p>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="urlInput" placeholder="Enter website URL... e.g., https://example.com" />
+      <button class="btn" id="auditBtn" onclick="runAudit()">🔍 Audit</button>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Analyzing website... This may take a few seconds.</p>
+    </div>
+
+    <div class="results" id="results">
+      <div class="score-card">
+        <div class="score-ring">
+          <svg viewBox="0 0 120 120" width="150" height="150">
+            <circle class="bg" cx="60" cy="60" r="52"/>
+            <circle class="fg" id="scoreArc" cx="60" cy="60" r="52" stroke-dasharray="0 327"/>
+          </svg>
+          <div class="score-value" id="scoreNum">0</div>
+        </div>
+        <div class="score-grade" id="scoreGrade">Grade: -</div>
+        <div style="color:var(--text-muted);font-size:0.9rem;margin-top:0.5rem;" id="auditUrl"></div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="num" style="color:var(--pass)" id="sPass">0</div>
+          <div class="lbl">Passed</div>
+        </div>
+        <div class="summary-item">
+          <div class="num" style="color:var(--warn)" id="sWarn">0</div>
+          <div class="lbl">Warnings</div>
+        </div>
+        <div class="summary-item">
+          <div class="num" style="color:var(--fail)" id="sFail">0</div>
+          <div class="lbl">Failed</div>
+        </div>
+        <div class="summary-item">
+          <div class="num" style="color:var(--info)" id="sInfo">0</div>
+          <div class="lbl">Info</div>
+        </div>
+      </div>
+
+      <div id="checks"></div>
+    </div>
+  </div>
+
+  <script>
+    async function runAudit() {
+      const url = document.getElementById('urlInput').value.trim();
+      if (!url) { document.getElementById('urlInput').focus(); return; }
+
+      document.getElementById('loading').classList.add('show');
+      document.getElementById('results').classList.remove('show');
+      document.getElementById('auditBtn').disabled = true;
+
+      try {
+        const res = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+        renderResults(data.data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('auditBtn').disabled = false;
+      }
+    }
+
+    function renderResults(data) {
+      // Score
+      const score = data.score || 0;
+      const circumference = 2 * Math.PI * 52; // ~327
+      const arc = (score / 100) * circumference;
+      
+      const arcEl = document.getElementById('scoreArc');
+      const scoreColor = score >= 80 ? 'var(--pass)' : score >= 60 ? 'var(--warn)' : 'var(--fail)';
+      arcEl.style.stroke = scoreColor;
+      arcEl.setAttribute('stroke-dasharray', `${arc} ${circumference}`);
+      
+      document.getElementById('scoreNum').textContent = score;
+      document.getElementById('scoreNum').style.color = scoreColor;
+      document.getElementById('scoreGrade').textContent = `Grade: ${data.grade || '-'}`;
+      document.getElementById('auditUrl').textContent = data.url;
+
+      // Summary
+      const s = data.summary || {};
+      document.getElementById('sPass').textContent = s.passed || 0;
+      document.getElementById('sWarn').textContent = s.warnings || 0;
+      document.getElementById('sFail').textContent = s.failures || 0;
+      document.getElementById('sInfo').textContent = s.info || 0;
+
+      // Group checks by category
+      const checks = data.checks || [];
+      const categories = {};
+      checks.forEach(c => {
+        if (!categories[c.category]) categories[c.category] = [];
+        categories[c.category].push(c);
+      });
+
+      const checksHtml = Object.entries(categories).map(([cat, items]) => {
+        const fails = items.filter(i => i.status === 'fail').length;
+        const warns = items.filter(i => i.status === 'warn').length;
+        const passes = items.filter(i => i.status === 'pass').length;
+        
+        let badgeClass = 'badge-pass';
+        let badgeText = `${passes} ✓`;
+        if (fails > 0) { badgeClass = 'badge-fail'; badgeText = `${fails} ✗`; }
+        else if (warns > 0) { badgeClass = 'badge-warn'; badgeText = `${warns} ⚠`; }
+
+        const icons = { pass: '✓', warn: '!', fail: '✗', info: 'i' };
+
+        return `
+          <div class="category">
+            <div class="category-header" onclick="this.parentElement.classList.toggle('open')">
+              <h3>${cat}</h3>
+              <span class="badge ${badgeClass}">${badgeText}</span>
+            </div>
+            <div class="category-body">
+              ${items.map(c => `
+                <div class="check-item">
+                  <div class="check-icon ${c.status}">${icons[c.status] || '?'}</div>
+                  <span class="check-name">${c.name}</span>
+                  <span class="check-msg">${c.message}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('checks').innerHTML = checksHtml;
+      document.getElementById('results').classList.add('show');
+    }
+
+    document.getElementById('urlInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') runAudit();
+    });
+  </script>
+</body>
+</html>
